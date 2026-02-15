@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Descargador de Capítulos",
+  "version": "1.0",
+  "description": "Download chapters in Markdown from the current page.",
+  "permissions": ["downloads", "activeTab"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ]
+}
