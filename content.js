@@ -70,28 +70,19 @@
         const elements = Array.from(document.querySelectorAll('#chr-content h4, #chr-content p'));
         let title = document.querySelector('.chr-title').title;
         if (!title) return;
-        const paragraphs = [];
-        elements.forEach(el => {
-            const text = el.innerText.trim();
-            paragraphs.push(text);
-        });
+
+        const paragraphs = elements.map(el => el.innerText.trim()).filter(Boolean);
+
         const markdownContent = `# ${title}\n${paragraphs.join('\n\n')}`
         const chapterMatch = title.match(/\d+/);
         const chapterNumber = chapterMatch ? chapterMatch[0].padStart(3, '0') : '000';
         const fileName = `${chapterNumber}-chapter.md`;
-        // const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8' });
-        // const url = URL.createObjectURL(blob);
+
         chrome.runtime.sendMessage({
             action: 'download',
             content: markdownContent,
             fileName
         });
-        // const a = document.createElement('a');
-        // a.href = url;
-        // a.download = fileName;
-        // a.click();
-        // document.body.removeChild(a);
-        // URL.revokeObjectURL(url);
     }
 
 
