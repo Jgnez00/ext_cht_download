@@ -5,10 +5,6 @@
 
     window.NovelDownloader.flow = {
         stopProcess: async () => {
-            if (state.observer) {
-                state.observer.disconnect();
-                state.observer = null;
-            }
             await storage.set({ active: false, remaining: 0 });
             state.isProcessing = false;
             alert("Process completed");
@@ -20,35 +16,47 @@
                 return;
             }
 
-            const data = await storage.get(['active', 'remaining']);
+            let data = await storage.get(['active', 'remaining']);
             if (!data.active || data.remaining <= 0) return;
 
             state.isProcessing = true;
 
             try {
-                await navigation.waitTranslation();
-                await navigation.autoScroll();
-                await window.NovelDownloader.helpers.sleep(1000);
-                page.downloadChapter();
+                while (data.remaining > 0) {
+                    const contentReady = await navigation.waitForContent();
+                    if (!contentReady) {
+                        console.error('No se pudo cargar el contenido del capitulo');
+                        break;
+                    };
 
-                const newRemaining = data.remaining - 1;
-                if (newRemaining <= 0) {
-                    await window.NovelDownloader.flow.stopProcess();
-                    return;
-                }
+                    await navigation.autoScroll();
+                    await window.NovelDownloader.helpers.sleep(1000);
 
-                await storage.set({ remaining: newRemaining });
-                await window.NovelDownloader.helpers.sleep(4000);
+                    const downloaded = page.downloadChapter();
+                    if (!downloaded) {
+                        console.error('No se pudo descargar el capitulo');
+                        break;
+                    }
+                    
+                    const newRemaining = data.remaining - 1;
+                    await storage.set({ remaining: newRemaining });
+                    if (newRemaining <= 0) {
+                        await window.NovelDownloader.flow.stopProcess();
+                        return;
+                    }
 
-                const navigated = await navigation.goForNextAndWait();
-                if (navigated) {
-                    state.isProcessing = false;
-                    await window.NovelDownloader.flow.executeAuto();
-                } else {
-                    await window.NovelDownloader.flow.stopProcess();
+                    const navigated = await navigation.goForNextAndWait();
+                    if (!navigated) {
+                        console.error('No se pudo navegar al siguiente capitulo');
+                        await window.NovelDownloader.flow.stopProcess();
+                        break;
+                    }
+
+                    data.remaining = newRemaining;
                 }
             } catch (error) {
                 console.error("Error en executeAuto:", error);
+            } finally {
                 state.isProcessing = false;
             }
         },
@@ -57,23 +65,15 @@
             const amount = parseInt(prompt("Cantidad de capítulos"));
             if (!amount || amount <= 0) return;
 
-            if (state.observer) {
-                state.observer.disconnect();
-            }
-
             state.isProcessing = false;
-            page.initializeTitle();
 
             await storage.set({ active: true, remaining: amount });
-            navigation.setupWatcher();
             await window.NovelDownloader.flow.executeAuto();
         }
     };
 
     // ---- Inicialización ----
     ui.createButton();
-    page.initializeTitle();
-    navigation.setupWatcher();
 
     (async () => {
         const data = await storage.get(['active']);

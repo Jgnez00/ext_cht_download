@@ -2,24 +2,17 @@
     window.NovelDownloader = window.NovelDownloader || {};
 
     window.NovelDownloader.page = {
-        initializeTitle: () => {
-            const titleElement = document.querySelector('.chr-title');
-            if (titleElement) {
-                window.NovelDownloader.state.currentChapterTitle = titleElement.title;
-            }
-        },
-
         downloadChapter: () => {
             const { titleNovel, titleChapter, paragraphs } = window.NovelDownloader.selectors.getChapterData();
             
             if (!titleChapter) {
                 console.error('No chapter title found');
-                return;
+                return false;
             }
             
             if (!paragraphs.length) {
                 console.error('No paragraphs found');
-                return;
+                return false;
             }
 
             const markdownContent = `# ${titleChapter}\n${paragraphs.join('\n\n')}`;
@@ -33,6 +26,8 @@
                 fileName,
                 titleNovel
             });
+
+            return true;
         }
     };
 })();

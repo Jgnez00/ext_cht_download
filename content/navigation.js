@@ -1,12 +1,33 @@
 (() => {
     window.NovelDownloader = window.NovelDownloader || {};
     const { sleep } = window.NovelDownloader.helpers;
-    const state = window.NovelDownloader.state;
+    const selectors = window.NovelDownloader.selectors;
+
+    const waitForUrlChange = async (oldUrl) => {
+        let attempts = 0;
+        while (window.location.pathname === oldUrl && attempts < 100) {
+            await sleep(200);
+            attempts++;
+        }
+
+        return window.location.pathname !== oldUrl;
+    }
     
     window.NovelDownloader.navigation = {
-        waitTranslation: async () => await sleep(8000),
+        waitForContent: async () => {
+            let attempts = 0;
+            while (attempts < 50) {
+                const { titleChapter, paragraphs } = selectors.getChapterData();
+                if (titleChapter && paragraphs.length > 0) {
+                    return true;
+                }
+                await sleep(200);
+                attempts++;
+            }
+            return false;
+        },
 
-        autoScroll: () => new Promise(resolve => {
+        autoScroll: () => new Promise(res => {
             let totalHeight = 0;
             const distance = 500;
             const timer = setInterval(() => {
@@ -14,7 +35,7 @@
                 totalHeight += distance;
                 if (totalHeight >= document.body.scrollHeight) {
                     clearInterval(timer);
-                    resolve();
+                    res();
                 }
             }, 900);
         }),
@@ -22,58 +43,22 @@
         goForNextAndWait: async () => {
             const next = document.querySelector('button[aria-label="Siguiente capítulo"]');
             if (!next) {
-                await window.NovelDownloader.flow.stopProcess();
+                console.error("No se encontró el botón siguiente");
+                // await window.NovelDownloader.flow.stopProcess();
                 return false;
             }
 
-            const oldTitle = state.currentChapterTitle;
+            const oldUrl = window.location.pathname;
             next.click();
 
-            let attempts = 0;
-            const maxAttempts = 50;
-
-            while (attempts < maxAttempts) {
-                await sleep(200);
-                const newTitleElement = document.querySelector('.chr-title');
-                const newTitle = newTitleElement ? newTitleElement.title : '';
-
-                if (newTitle && newTitle !== oldTitle) {
-                    state.currentChapterTitle = newTitle;
-                    await sleep(1000);
-                    return true;
-                }
-                attempts++;
+            const urlChange = await waitForUrlChange(oldUrl);
+            if (!urlChange) {
+                console.error("La URL no cambió después de hacer clic en siguiente");
+                return false;
             }
 
-            console.error("Timeout esperando el siguiente capítulo");
-            return false;
+            await sleep(1500);
+            return true;
         },
-
-        setupWatcher: () => {
-            if (state.observer) {
-                state.observer.disconnect();
-            }
-
-            state.observer = new MutationObserver(async () => {
-                const titleElement = document.querySelector('.chr-title');
-                if (!titleElement) return;
-
-                const newTitle = titleElement.title;
-                if (newTitle && newTitle !== state.currentChapterTitle) {
-                    state.currentChapterTitle = newTitle;
-                    const data = await window.NovelDownloader.storage.get(['active']);
-                    if (data.active && !state.isProcessing) {
-                        await sleep(500);
-                        await window.NovelDownloader.flow.executeAuto();
-                    }
-                }
-            });
-
-            state.observer.observe(document.body, {
-                childList: true,
-                subtree: true,
-                characterData: true
-            });
-        }
     };
 })();

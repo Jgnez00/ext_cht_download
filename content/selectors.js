@@ -5,7 +5,7 @@
         getTitleNovel: () => {
             const url = new URL(window.location.href);
             const parts = url.pathname.split('/');
-            return parts[2];
+            return parts[2] || null;
         },
         
         getTitleChapter: () => {

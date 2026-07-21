@@ -3,8 +3,5 @@
 
     window.NovelDownloader.state = {
         isProcessing: false,
-        currentChapterTitle: '',
-        observer: null
     };
 })();
-
