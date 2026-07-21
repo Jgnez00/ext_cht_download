@@ -9,8 +9,17 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://novelbin.com/*"],
-      "js": ["content.js"]
+      "matches": ["https://novelarrow.com/chapter/*"],
+      "js": [
+        "utils/helpers.js",
+        "content/storage.js",
+        "content/state.js",
+        "content/ui.js",
+        "content/selectors.js",
+        "content/page.js",
+        "content/navigation.js",
+        "content/index.js"
+      ]
     }
   ]
 }

@@ -3,7 +3,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         const dataURL = 'data:text/markdown;charset=utf-8,' + encodeURIComponent(message.content);
         chrome.downloads.download({
             url: dataURL,
-            filename: `name/${message.fileName}`,
+            filename: `novel/${message.titleNovel}/${message.fileName}`,
             saveAs: false
         }, () => {
             console.log('kd');
