@@ -38,18 +38,18 @@
                         break;
                     }
                     
-                    const newRemaining = data.remaining - 1;
-                    await storage.set({ remaining: newRemaining });
-                    if (newRemaining <= 0) {
-                        await window.NovelDownloader.flow.stopProcess();
-                        return;
-                    }
-
                     const navigated = await navigation.goForNextAndWait();
                     if (!navigated) {
                         console.error('No se pudo navegar al siguiente capitulo');
                         await window.NovelDownloader.flow.stopProcess();
                         break;
+                    }
+                    
+                    const newRemaining = data.remaining - 1;
+                    await storage.set({ remaining: newRemaining });
+                    if (newRemaining <= 0) {
+                        await window.NovelDownloader.flow.stopProcess();
+                        return;
                     }
 
                     data.remaining = newRemaining;
